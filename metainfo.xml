@@ -1,0 +1,49 @@
+<?xml version='1.0' encoding='utf-8'?>
+<component type="desktop-application">
+    <id>io.github.kirukomaru11.Memorize</id>
+    <developer id="io.github.kirukomaru11">
+        <name>きるこ丸11号</name>
+    </developer>
+    <name>Memorize</name>
+    <summary>Learn with flashcards</summary>
+    <description>
+        <p>Memorize</p>
+    </description>
+    <branding>
+        <color type="primary" scheme_preference="light">#f6f5f4</color>
+        <color type="primary" scheme_preference="dark">#c0bfbc</color>
+    </branding>
+    <supports>
+        <control>pointing</control>
+        <control>keyboard</control>
+        <control>touch</control>
+    </supports>
+    <launchable type="desktop-id">io.github.kirukomaru11.Memorize.desktop</launchable>
+    <icon type="stock">io.github.kirukomaru11.Memorize</icon>
+    <categories>
+        <category>Education</category>
+    </categories>
+    <keywords>
+      <keyword>GTK</keyword>
+      <keyword>GNOME</keyword>
+      <keyword>Flashcards</keyword>
+    </keywords>
+    <provides>
+        <binary>memorize</binary>
+    </provides>
+    <content_rating type="oars-1.1" />
+    <metadata_license>MIT</metadata_license>
+    <project_license>MIT</project_license>
+    <url type="bugtracker">https://github.com/kirukomaru11/Memorize/issues</url>
+    <url type="homepage">https://github.com/kirukomaru11/Memorize</url>
+    <url type="vcs-browser">https://github.com/kirukomaru11/Memorize</url>
+    <releases>
+        <release version="1.0" date="2025-11-12">
+            <description>
+                <ul>
+                    <li>First release</li>
+                </ul>
+            </description>
+        </release>
+    </releases>
+</component>
