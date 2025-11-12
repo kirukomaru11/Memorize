@@ -1,0 +1,49 @@
+{
+  "id" : "io.github.kirukomaru11.Memorize",
+  "runtime" : "org.gnome.Platform",
+  "runtime-version" : "master",
+  "sdk" : "org.gnome.Sdk",
+  "command" : "memorize",
+  "modules" : [
+    {
+      "name" : "AppUtils",
+      "buildsystem" : "simple",
+      "sources" : [
+        {
+          "type" : "git",
+          "url" : "https://github.com/kirukomaru11/AppUtils.git",
+          "branch": "main"
+        }
+      ],
+      "build-commands" : [
+        "install -D AppUtils.py /app/lib/python3.13/site-packages/AppUtils.py"
+      ]
+    },
+    {
+      "name" : "Memorize",
+      "buildsystem" : "simple",
+      "sources" : [
+        {
+          "type" : "git",
+          "url" : "https://github.com/kirukomaru11/Memorize.git",
+          "branch": "main"
+        }
+      ],
+      "build-commands" : [
+        "install -Dm755 main.py /app/bin/memorize",
+        "appstreamcli make-desktop-file metainfo.xml $FLATPAK_ID.desktop && install -D $FLATPAK_ID.desktop /app/share/applications/$FLATPAK_ID.desktop",
+        "install -D metainfo.xml /app/share/metainfo/$FLATPAK_ID.metainfo.xml",
+        "install -D app.svg /app/share/icons/hicolor/scalable/apps/$FLATPAK_ID.svg && install -D app-symbolic.svg /app/share/icons/hicolor/symbolic/apps/$FLATPAK_ID-symbolic.svg",
+        "install -D month-symbolic.svg /app/share/$FLATPAK_ID/month-symbolic.svg",
+        "install -D thumbs-down-outline-symbolic.svg /app/share/$FLATPAK_ID/thumbs-down-outline-symbolic.svg",
+        "install -D thumbs-up-outline-symbolic.svg /app/share/$FLATPAK_ID/thumbs-up-outline-symbolic.svg",
+        "install -D brain-augemnted-symbolic.svg /app/share/$FLATPAK_ID/brain-augemnted-symbolic.svg"
+      ]
+    }
+  ],
+  "finish-args" : [
+    "--device=dri",
+    "--socket=pulseaudio",
+    "--socket=wayland"
+  ]
+}
