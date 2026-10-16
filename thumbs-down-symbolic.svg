@@ -1,0 +1,21 @@
+<svg xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:ns0="http://www.w3.org/2000/svg" xmlns:ns1="https://www.gtk.org/grappa" xmlns:ns3="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" ns1:rendering="symbolic" ns1:version="1" ns1:state-names="outline empty" ns1:state="outline" id="svg1" viewBox="0 0 16 16" preserveAspectRatio="xMidYMid meet" gpa:state="outline" ns0:state="outline" xmlns="http://www.w3.org/2000/svg">
+  <title>thumbs-down</title><metadata>
+    <rdf:rdf>
+      <work>
+        <license rdf:resource="https://creativecommons.org/publicdomain/zero/1.0/"/>
+        <dc:creator>
+          <agent>
+            <dc:title>Jakub Steiner</dc:title>
+          </agent>
+        </dc:creator>
+        <dc:subject>
+          <rdf:bag>
+            <rdf:li>category hand thumbs thumbsdown down body finger like emoji-body social-network</rdf:li>
+          </rdf:bag>
+        </dc:subject>
+      </work>
+    </rdf:rdf>
+  </metadata>
+  <path id="thumbs down" fill="none" stroke="rgb(0,0,0)" stroke-width="2.000" stroke-linecap="round" stroke-linejoin="round" d="M 2 7 L 5 7 L 6.73 13.057 C 6.88941 13.6152, 7.39953 14, 7.98 14 L 8.02 14 C 8.56124 14, 9 13.5612, 9 13.02 L 9 10 L 12 10 C 13.1046 10, 14 9.10457, 14 8 L 13.283 2.98 C 13.1208 1.84384, 12.1477 0.999921, 11 1 L 2 1 Z" ns1:stroke-minwidth="25%" ns1:stroke-maxwidth="150%" ns1:states="outline" class="foreground-stroke" data-stroke-mid="2.0" data-stroke-min="0.5" data-stroke-max="3.0">
+  </path>
+</svg>
