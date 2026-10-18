@@ -72,7 +72,9 @@ class Deck(ListObject):
     def name(self, value):
         old_name = self.name
         self._name = value
-        if old_name: App.default.data.update(table=self.__class__.__gtype_name__ + "s", column="Name", value=self.name, conditions="Name = ?", conds=(old_name,))
+        if old_name:
+            App.default.data.update(table=self.__class__.__gtype_name__ + "s", column="Name", value=self.name, conditions="Name = ?", conds=(old_name,))
+            Task.invoke(App.default.decks.do_dict)
 
     cover_paintable = GObject.Property(type=Gdk.Paintable)
     cover = GObject.Property(type=str)
@@ -2332,7 +2334,7 @@ def main():
     App.default.lookup_action("show-hidden").connect("notify::state", Window.do_search)
     App.default.lookup_action("undo").set_enabled(False)
     App.default.undo, App.default.medias = [], {}
-    App.default.decks = List(Deck, unique="name", list=App.default.data.read(table="Decks", return_dict=True, force_tuple=True))
+    App.default.decks = List(Deck, unique="name", list=App.default.data.read(table="Decks", return_dict=True, force_tuple=True), static=True)
     App.default.cards = List(Card)
     App.default.main(css=APP_CSS)
 
