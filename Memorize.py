@@ -2332,8 +2332,8 @@ def main():
     App.default.lookup_action("show-hidden").connect("notify::state", Window.do_search)
     App.default.lookup_action("undo").set_enabled(False)
     App.default.undo, App.default.medias = [], {}
-    App.default.decks = List(Deck, "name", App.default.data.read(table="Decks", return_dict=True, force_tuple=True))
-    App.default.cards = List(Card, False)
+    App.default.decks = List(Deck, unique="name", list=App.default.data.read(table="Decks", return_dict=True, force_tuple=True))
+    App.default.cards = List(Card)
     App.default.main(css=APP_CSS)
 
 if __name__ == "__main__": main()
