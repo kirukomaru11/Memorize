@@ -31,7 +31,7 @@ jobs:
           with:
               msystem: UCRT64
               update: true
-              install: mingw-w64-ucrt-x86_64-libadwaita mingw-w64-ucrt-x86_64-libsoup3 mingw-w64-ucrt-x86_64-libavif mingw-w64-ucrt-x86_64-libjxl mingw-w64-ucrt-x86_64-webp-pixbuf-loader mingw-w64-ucrt-x86_64-gst-libav mingw-w64-ucrt-x86_64-gst-plugins-rs mingw-w64-ucrt-x86_64-gst-plugins-good mingw-w64-ucrt-x86_64-gst-plugins-ugly mingw-w64-ucrt-x86_64-python-gobject mingw-w64-ucrt-x86_64-pyinstaller mingw-w64-ucrt-x86_64-python-pip mingw-w64-ucrt-x86_64-imagemagick
+              install: mingw-w64-ucrt-x86_64-libadwaita mingw-w64-ucrt-x86_64-libsoup3 mingw-w64-ucrt-x86_64-libavif mingw-w64-ucrt-x86_64-libjxl mingw-w64-ucrt-x86_64-webp-pixbuf-loader mingw-w64-ucrt-x86_64-gst-libav mingw-w64-ucrt-x86_64-gst-plugins-rs mingw-w64-ucrt-x86_64-gst-plugins-good mingw-w64-ucrt-x86_64-gst-plugins-ugly mingw-w64-ucrt-x86_64-python-gobject mingw-w64-ucrt-x86_64-pyinstaller mingw-w64-ucrt-x86_64-python-pip mingw-w64-ucrt-x86_64-python-cairo mingw-w64-ucrt-x86_64-imagemagick
         - run: |
               python -m pip install fsrs
               cd ${{ github.event.repository.name }}
@@ -44,7 +44,7 @@ jobs:
               find ../utils -type f -iname "*.svg" -exec cp -a {} assets/ \;
               magick -background none io.github.${{ github.repository_owner }}.${{ github.event.repository.name }}.svg -define icon:auto-resize=256,128,64,48,32,16 icon.ico
               export PREFIX="$(cygpath -w "$MSYSTEM_PREFIX")"
-              python -m PyInstaller -y -F -w -i icon.ico --collect-submodules gi --add-data "assets:assets" --add-binary "$PREFIX/bin/gdbus.exe:." --add-data "$PREFIX/lib/girepository-1.0:gi_typelibs" --add-data "$PREFIX/lib/gdk-pixbuf-2.0:lib/gdk-pixbuf-2.0" --add-data "$PREFIX/lib/gstreamer-1.0:gst_plugins" --add-data "$PREFIX/libexec/gstreamer-1.0:." --add-data "$PREFIX/share/fonts:share/fonts" --add-data "$PREFIX/share/icons:share/icons" ${{ github.event.repository.name }}.py
+              python -m PyInstaller -y -F -w -i icon.ico --hidden-import cairo --collect-submodules gi --add-data "assets:assets" --add-binary "$PREFIX/bin/gdbus.exe:." --add-data "$PREFIX/lib/girepository-1.0:gi_typelibs" --add-data "$PREFIX/lib/gdk-pixbuf-2.0:lib/gdk-pixbuf-2.0" --add-data "$PREFIX/lib/gstreamer-1.0:gst_plugins" --add-data "$PREFIX/libexec/gstreamer-1.0:." --add-data "$PREFIX/share/fonts:share/fonts" --add-data "$PREFIX/share/icons:share/icons" ${{ github.event.repository.name }}.py
         - uses: actions/upload-artifact@v7
           with:
               name: ${{ github.event.repository.name }}.exe
