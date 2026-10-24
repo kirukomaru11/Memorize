@@ -5,7 +5,8 @@ except ModuleNotFoundError:
         from .Utils import *
     except ModuleNotFoundError:
         print("No Utils")
-        exit()
+        import sys
+        sys.exit()
 
 from re import compile as Regex, escape as re_escape, MULTILINE, IGNORECASE
 from fsrs import State, Rating, Scheduler, Card as _Card
