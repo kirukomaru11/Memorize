@@ -229,7 +229,10 @@ class Deck(ListObject):
 
     @staticmethod
     def items_changed(l, *_):
-        if Window.current: Window.current.do_search()
+        if Window.current:
+            for i in Window.current.catalog:
+                if not i.deck in l: i.unparent()
+            Task.invoke(Window.current.do_search)
 
     def get_scheduler(self):
         kwargs = {
