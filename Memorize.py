@@ -2142,8 +2142,6 @@ class Window(Window):
         if self.highlight:  self.highlight.add_css_class("highlight")
         return a
 
-def file_open(a, files, *_): pass
-
 def activate(a):
     if a.get_active_window(): return a.get_active_window().present()
     Window()
@@ -2326,7 +2324,6 @@ def main():
         },
         activate=activate,
         data=DATA_INIT + "CREATE TABLE IF NOT EXISTS Settings (Key TEXT PRIMARY KEY NOT NULL, Value TEXT);",
-        file_open=file_open,
         window_removed=window_removed,
         actions=[
             ("new-deck", new_deck),
