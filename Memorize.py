@@ -19,8 +19,6 @@ from sqlite3 import register_adapter
 from datetime import datetime, timedelta, timezone
 
 class Context(Gtk.PopoverMenu):
-    __gtype_name__ = "Context"
-
     widget = GObject.Property(type=GObject.Object)
 
     def __init__(self):
@@ -62,8 +60,6 @@ class Context(Gtk.PopoverMenu):
             if isinstance(widget, DeckWidget): Gtk.FileDialog(initial_name=widget.deck.name).save(window.get_root(), None, Deck.dialog_export, (widget.deck, "Data" in action))
 
 class Deck(ListObject):
-    __gtype_name__ = "Deck"
-
     id = GObject.Property(type=int, nick="ID", default=0)
 
     @GObject.Property(type=str)
@@ -74,7 +70,7 @@ class Deck(ListObject):
         old_name = self.name
         self._name = value
         if old_name:
-            App.default.data.update(table=self.__class__.__gtype_name__ + "s", column="Name", value=self.name, conditions="Name = ?", conds=(old_name,))
+            App.default.data.update(table=self.__class__.__name__ + "s", column="Name", value=self.name, conditions="Name = ?", conds=(old_name,))
             Task.invoke(App.default.decks.do_dict)
 
     cover_paintable = GObject.Property(type=Gdk.Paintable)
@@ -201,7 +197,7 @@ class Deck(ListObject):
         name = p.get_name().replace("-", "_")
         v = getattr(self, name, None)
         p = p.get_nick() or name.title().replace("_", " ")
-        t = self.__class__.__gtype_name__ + "s"
+        t = self.__class__.__name__ + "s"
         c = "Name = ?"
         if p == "Cover":
             self.cover_paintable = None
@@ -248,7 +244,6 @@ class Deck(ListObject):
         return Scheduler(**kwargs)
 
 class DeckEditor(PopupDialog):
-    __gtype_name__ = "DeckEditor"
     deck = GObject.Property(type=Deck)
     rows = GObject.Property(type=object)
     new_cards_review_order_model = Gtk.StringList.new(Deck.new_cards_review_orders)
@@ -397,7 +392,6 @@ class DeckEditor(PopupDialog):
         self.close()
 
 class DeckWidget(Gtk.Button):
-    __gtype_name__ = "DeckWidget"
     deck = GObject.Property(type=Deck)
     def __init__(self, deck=None):
         avatar = Adw.Avatar(size=250, show_initials=True)
@@ -473,8 +467,6 @@ class ImportCards:
         if f: ImportCards(f, *da)
 
 class Card(ListObject):
-    __gtype_name__ = "Card"
-
     deck = GObject.Property(type=Deck)
     states = ["Learning", "Review", "Relearning"]
 
@@ -485,7 +477,7 @@ class Card(ListObject):
     def id(self, value):
         old_id = self.id
         self._id = value
-        if old_id: App.default.data.update(table=self.__class__.__gtype_name__ + "s", column="ID", value=self.id, conditions="Deck = ? AND ID = ?", conds=(self.deck.name, old_id,))
+        if old_id: App.default.data.update(table=self.__class__.__name__ + "s", column="ID", value=self.id, conditions="Deck = ? AND ID = ?", conds=(self.deck.name, old_id,))
 
     front = GObject.Property(type=str, default="")
     back = GObject.Property(type=str, default="")
@@ -507,7 +499,7 @@ class Card(ListObject):
         name = p.get_name().replace("-", "_")
         v = getattr(self, name, None)
         p = p.get_nick() or name.title().replace("_", " ")
-        t = self.__class__.__gtype_name__ + "s"
+        t = self.__class__.__name__ + "s"
         if p == "Hidden":
             for i in CardsList.get_all():
                 if i.deck == self.deck: i.hidden_filter.changed(Gtk.FilterChange.DIFFERENT)
@@ -548,7 +540,6 @@ class Card(ListObject):
         self.last_review = GLib.DateTime.new_from_iso8601(card.last_review.isoformat(), GLib.TimeZone.new_utc()) if card.last_review else None
 
 class AnkiImport(Adw.Dialog):
-    __gtype_name__ = "AnkiImport"
     card = GObject.Property(type=object)
     deck = GObject.Property(type=Deck)
     file = GObject.Property(type=Gio.File)
@@ -800,7 +791,6 @@ class AnkiImport(Adw.Dialog):
         d.back.text += s
 
 class CardsList(Adw.Bin):
-    __gtype_name__ = "CardsList"
     columns = {}
     deck = GObject.Property(type=Deck)
     view = GObject.Property(type=Gtk.ColumnView)
@@ -840,10 +830,10 @@ class CardsList(Adw.Bin):
             view.append_column(c)
         toolbar = Adw.ToolbarView(content=Gtk.Overlay(child=Gtk.ScrolledWindow(child=view)))
         super().__init__(child=toolbar)
-        self.add_css_class(self.__gtype_name__.lower())
+        self.add_css_class(self.__class__.__name__.lower())
         self.view = view
         actions = Gio.SimpleActionGroup()
-        self.insert_action_group(self.__gtype_name__.lower(), actions)
+        self.insert_action_group(self.__class__.__name__.lower(), actions)
         actions.add_action(Gio.SimpleAction.new("context", get_variant("str").get_type()))
         actions.lookup_action("context").connect("activate", Context.activate, self)
         self.filter = f.get_filter()
@@ -1118,8 +1108,6 @@ class CardsList(Adw.Bin):
     factory = None
 
 class CardEditor(PopupDialog):
-    __gtype_name__ = "CardEditor"
-
     deck = GObject.Property(type=Deck)
     cards = GObject.Property(type=object)
     rows = GObject.Property(type=object)
@@ -1410,7 +1398,6 @@ class CardEditor(PopupDialog):
         if e: e.start()
 
 class Review(Adw.BreakpointBin):
-    __gtype_name__ = "Review"
     title = GObject.Property(type=Gtk.Label)
     deck = GObject.Property(type=Deck)
     status = GObject.Property(type=Adw.StatusPage)
@@ -1458,7 +1445,7 @@ class Review(Adw.BreakpointBin):
         self.bind_property("side", bottom.get_title_widget(), "icon-name", DEFAULT_BIND, self.__class__.button_bind)
         Window.controller_init(self)
         self.actions = actions = Gio.SimpleActionGroup()
-        self.insert_action_group(self.__gtype_name__.lower(), actions)
+        self.insert_action_group(self.__class__.__name__.lower(), actions)
         actions.add_action(Gio.SimpleAction.new("context", get_variant("str").get_type()))
         actions.lookup_action("context").connect("activate", Context.activate, self)
         for i in ("edit-deck", "new-card", "pop-out"):
@@ -1860,7 +1847,6 @@ class Review(Adw.BreakpointBin):
         Task.invoke(self.autoplay)
 
 class Stats(Adw.BreakpointBin):
-    __gtype_name__ = "Stats"
     deck = GObject.Property(type=Deck)
     box = GObject.Property(type=Gtk.Box)
     def __init__(self, deck):
@@ -1970,7 +1956,6 @@ class Stats(Adw.BreakpointBin):
             elif i: self.box.append(i)
 
 class Window(Window):
-    __gtype_name__ = "Window"
     context = GObject.Property(type=Context)
     drop_target_gtypes = (DeckWidget,)
     def __init__(self):
