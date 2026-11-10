@@ -2236,7 +2236,7 @@ card media picture { margin: 8px 0px; }
 card media:first-child picture { margin: 0px 0px 8px 0px; }
 card media:last-child picture { margin: 8px 0px 0px 0px; }
 card media:only-child picture { margin: 0px; }
-card media graphicsoffload > mediacontrols { margin: 0px; }
+card media graphicsoffload > media-controls { margin: 0px; }
 navigation-view-page > toolbarview > overlay > scrolledwindow > viewport > wrap-box { margin: 10px; }
 searchbar search { border-spacing: 6px; padding: 0px 18px; }
 find entry.search { border-radius: 9px; backdrop-filter: blur(20px) brightness(0.9); }
