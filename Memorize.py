@@ -85,6 +85,9 @@ class Deck(ListObject):
     maximum_interval = GObject.Property(type=int, default=36500)
     enable_fuzzing = GObject.Property(type=bool, default=True)
 
+    properties = ["id", "name", "cover", "hidden", "new_cards_per_day", "new_cards_review_order", "desired_retention", "learning_steps", "relearning_steps", "maximum_interval", "enable_fuzzing"]
+    properties_extra = {"Learning Steps": "TEXT DEFAULT \"60 600\"", "Relearning Steps": "TEXT DEFAULT \"600\""}
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.id == 0:
@@ -489,6 +492,9 @@ class Card(ListObject):
     last_review = GObject.Property(type=GLib.DateTime)
     hidden = GObject.Property(type=bool, default=False)
 
+    properties = ["deck", "id", "front", "back", "state", "step", "stability", "difficulty", "due", "last_review", "hidden"]
+    properties_extra = {"Deck": "TEXT", "Step": "INTEGER", "Stability": "REAL", "Difficulty": "REAL", "Due": "INTEGER", "Last Review": "INTEGER"}
+
     def deck_from(self, v): return v if isinstance(v, Deck) else App.default.decks[v] if isinstance(v, str) else None
     def due_from(self, v): return v if isinstance(v, GLib.DateTime) else GLib.DateTime.new_from_unix_utc(v) if isinstance(v, int) else GLib.DateTime.new_now_utc()
     def last_review_from(self, v): return v if isinstance(v, GLib.DateTime) else GLib.DateTime.new_from_unix_utc(v) if isinstance(v, int) else None
@@ -791,7 +797,6 @@ class AnkiImport(Adw.Dialog):
         d.back.text += s
 
 class CardsList(Adw.Bin):
-    columns = {}
     deck = GObject.Property(type=Deck)
     view = GObject.Property(type=Gtk.ColumnView)
     filter = GObject.Property(type=Gtk.EveryFilter)
@@ -818,7 +823,7 @@ class CardsList(Adw.Bin):
         s = Gtk.SortListModel.new(f, None)
         view.get_model().set_model(s)
         view.bind_property("sorter", s, "sorter", DEFAULT_BIND)
-        for k, v in self.__class__.columns.items():
+        for k, v in ColumnItem.columns.items():
             c = Gtk.ColumnViewColumn.new(k, v)
             c.set_properties(expand=True, resizable=True)
             if k in ("ID", "Hidden"): c.set_sorter(Gtk.NumericSorter(expression=Gtk.PropertyExpression.new(Card, None, k.lower())))
@@ -1063,21 +1068,10 @@ class CardsList(Adw.Bin):
             if self.search.get_text(): self.status.set_properties(icon_name="edit-find-symbolic", title="No Results")
             else: self.status.set_properties(icon_name="document-new-symbolic", title="No Cards")
 
+class ColumnItem:
+    columns = {}
     @staticmethod
-    def setup(f, l): l.set_child(Gtk.Label(single_line_mode=True, ellipsize=Pango.EllipsizeMode.END))
-
-    @staticmethod
-    def bind(f, l):
-        l.bind = l.get_property("item").bind_property(f.title.lower().replace(" ", "-"), l.get_child(), "label", DEFAULT_BIND, CardsList.column_bind)
-
-    @staticmethod
-    def unbind(f, l):
-        if hasattr(l, "bind"):
-            l.bind.unbind()
-            del l.bind
-
-    @staticmethod
-    def column_bind(b, v, t=""):
+    def label_bind(b, v, t=""):
         if t:
             v = getattr(v, t)
         if isinstance(v, Deck):
@@ -1094,18 +1088,14 @@ class CardsList(Adw.Bin):
         return v
 
     @staticmethod
-    def teardown(f, l): l.set_child(None)
+    def init(self): ListItem.__init__(self, child=Gtk.Label(single_line_mode=True, ellipsize=Pango.EllipsizeMode.END))
 
-    for i in ("ID", "Front", "Back", "State", "Due", "Last Review", "Hidden"):
-        factory = Gtk.SignalListItemFactory.new()
-        setattr(factory, "title", i)
-        factory.connect("setup", setup)
-        factory.connect("bind", bind)
-        factory.connect("unbind", unbind)
-        factory.connect("teardown", teardown)
-        columns[i] = factory
+    @staticmethod
+    def bind(self):
+        self.bindings = [self.item.bind_property(self.__class__.__name__.replace("R", " R").replace(" ", "-").lower(), self.get_child(), "label", DEFAULT_BIND, ColumnItem.label_bind)]
 
-    factory = None
+for i in ("ID", "Front", "Back", "State", "Due", "Last Review", "Hidden"):
+    ColumnItem.columns[i] = type(i.replace(" ", ""), (ListItem,), {"__init__": ColumnItem.init, "bind": ColumnItem.bind}).factory
 
 class CardEditor(PopupDialog):
     deck = GObject.Property(type=Deck)
@@ -2210,11 +2200,9 @@ def finish_func(p):
                         i.media_streams[n] = p
                         if p.duration and autoplay: Task.invoke(r.autoplay)
 
-DATA_INIT = f"""
-CREATE TABLE IF NOT EXISTS Decks (ID INTEGER, Name TEXT NOT NULL PRIMARY KEY, Cover TEXT, Hidden INTEGER NOT NULL DEFAULT 0, 'New Cards/Day' INTEGER NOT NULL DEFAULT 20, 'New Cards Review Order' TEXT NOT NULL DEFAULT 'After Due', 'Desired Retention' REAL NOT NULL DEFAULT 0.9, 'Learning Steps' TEXT DEFAULT '60 600', 'Relearning Steps' TEXT DEFAULT '600', 'Maximum Interval' INTEGER NOT NULL DEFAULT 36500, 'Enable Fuzzing' INTEGER NOT NULL DEFAULT 1);
-CREATE TABLE IF NOT EXISTS Cards (Deck TEXT NOT NULL, ID INTEGER NOT NULL, Front TEXT, Back TEXT, State TEXT NOT NULL DEFAULT 'Learning', Step INTEGER, Stability REAL, Difficulty REAL, Due INTEGER, 'Last Review' INTEGER, Hidden INTEGER NOT NULL DEFAULT 0, UNIQUE ('Deck', 'ID'), FOREIGN KEY (Deck) REFERENCES Decks(Name) ON DELETE CASCADE ON UPDATE CASCADE);
+DATA_INIT = (Deck, Card, f"""
 CREATE TABLE IF NOT EXISTS Reviews (Deck TEXT NOT NULL, ID INTEGER NOT NULL, Rating TEXT NOT NULL DEFAULT 'Good', 'Review Time' INTEGER NOT NULL DEFAULT (unixepoch()), 'Review Duration' INTEGER, FOREIGN KEY (Deck, ID) REFERENCES Cards(Deck, ID) ON DELETE CASCADE ON UPDATE CASCADE);
-"""
+""")
 
 INFO = {
     "ID": "io.github.kirukomaru11.Memorize",
@@ -2308,7 +2296,7 @@ def main():
             }
         },
         activate=activate,
-        data=DATA_INIT + "CREATE TABLE IF NOT EXISTS Settings (Key TEXT PRIMARY KEY NOT NULL, Value TEXT);",
+        data=DATA_INIT + ("CREATE TABLE IF NOT EXISTS Settings (Key TEXT PRIMARY KEY NOT NULL, Value TEXT);",),
         window_removed=window_removed,
         actions=[
             ("new-deck", new_deck),
