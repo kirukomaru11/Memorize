@@ -159,7 +159,7 @@ class Deck(ListObject):
         e = [i for i in Review.get_all() if i.deck == self]
         if e: return e[0]
 
-    def get_reviews(self): return App.default.data.read(table="Reviews", return_dict=True, force_tuple=True, conditions="Deck = ?", conds=(self.name,))
+    def get_reviews(self): return Reviews.read(self.name)
 
     @staticmethod
     def dialog_export(d, r, data):
@@ -221,7 +221,7 @@ class Deck(ListObject):
                 view.pop()
             else: e.get_root().close()
         App.default.data.delete(table="Cards", conditions="Deck = ?", conds=(self.name,))
-        App.default.data.delete(table="Reviews", conditions="Deck = ?", conds=(self.name,))
+        Reviews.clear("Deck = ?", (self.name,))
         App.default.cards.replace([i for i in App.default.cards if not i.deck == self])
         App.default.data.delete(table="Decks", conditions="Name = ?", conds=(self.name,))
         App.default.decks.remove(self)
@@ -329,7 +329,7 @@ class DeckEditor(PopupDialog):
         if r != "confirm":
             del d.editor
             return
-        App.default.data.delete(table="Reviews", conditions="Deck = ?", conds=(d.editor.deck.name,))
+        Reviews.clear("Deck = ?", (d.editor.deck.name,))
         del d.editor
 
     @staticmethod
@@ -514,7 +514,7 @@ class Card(ListObject):
 
     def delete(self):
         App.default.cards.remove(self)
-        App.default.data.delete(table="Reviews", conditions="Deck = ? AND ID = ?", conds=(self.deck.name, self.id))
+        Reviews.clear("Deck = ? AND ID = ?", (self.deck.name, self.id))
         App.default.data.delete(table="Cards", conditions="Deck = ? AND ID = ?", conds=(self.deck.name, self.id))
         r = self.deck.get_review()
         if r and r.cards and self in r.cards: r.start()
@@ -529,7 +529,7 @@ class Card(ListObject):
         App.default.undo.insert(0, c)
         App.default.lookup_action("undo").set_enabled(True)
         Task.invoke(self.from_card, new)
-        App.default.data.new(table="Reviews", names=tuple(log.keys()), values=tuple(log.values()))
+        Reviews.new(log)
 
     def to_card(self):
         state = getattr(State, self.state if self.state else "Learning", None)
@@ -1338,7 +1338,7 @@ class CardEditor(PopupDialog):
             chunk = ids_to_delete[i:i + chunk_size]
             placeholders = ",".join("?" for _ in chunk)
             App.default.data.delete(table="Cards", conditions=f"Deck = ? AND ID IN ({placeholders})", conds=(self.deck.name, *chunk))
-            App.default.data.delete(table="Reviews", conditions=f"Deck = ? AND ID IN ({placeholders})", conds=(self.deck.name, *chunk))
+            Reviews.clear(f"Deck = ? AND ID IN ({placeholders})", (self.deck.name, *chunk))
         for i in reversed([i for i, card in enumerate(App.default.cards) if card in self.cards]): App.default.cards.remove(i)
         l = [i for i in self.deck.get_cards() if i.id > min_id]
         if l:
@@ -2117,6 +2117,25 @@ class Window(Window):
         if self.highlight:  self.highlight.add_css_class("highlight")
         return a
 
+class Reviews:
+    deck = GObject.Property(type=str)
+    id = GObject.Property(nick="ID", type=int)
+    rating = GObject.Property(type=str, default="Good")
+    review_time = GObject.Property(type=int)
+    review_duration = GObject.Property(type=int)
+    indexes = ["deck", ("deck", "id")]
+    properties = ["deck", "id", "rating", "review_time", "review_duration"]
+
+    def new(i): App.default.data.new(table="Reviews", names=tuple(i.keys()), values=tuple(i.values()))
+
+    def read(deck, id=None):
+        if id == None: return App.default.data.read(table="Reviews", return_dict=True, force_tuple=True, conditions="Deck = ?", conds=(deck,))
+        else: return App.default.data.read(table="Reviews", return_dict=True, force_tuple=True, conditions="Deck = ? AND ID = ?", conds=(deck, id))
+
+    def delete(log): Reviews.clear(" AND ".join(f'"{i}" = ?' if " " in i else f"{i} = ?" for i in log.keys()), tuple(log.values()))
+
+    def clear(conditions, conds): App.default.data.delete(table="Reviews", conditions=conditions, conds=conds)
+
 def activate(a):
     if a.get_active_window(): return a.get_active_window().present()
     Window()
@@ -2150,7 +2169,7 @@ def do_import_data(d, r):
             App.default.data.new(table="Decks", names=tuple(i.keys()), values=tuple(i.values()))
             App.default.decks.add(i)
         for i in cards: App.default.data.new(table="Cards", names=tuple(i.keys()), values=tuple(i.values()))
-        for i in reviews: App.default.data.new(table="Reviews", names=tuple(i.keys()), values=tuple(i.values()))
+        for i in reviews: Reviews.new(i)
 
 def import_data(*_): Gtk.FileDialog().open_multiple(Window.current, None, do_import_data)
 
@@ -2164,7 +2183,7 @@ def undo(*_):
         App.default.undo.remove(c)
         card, old, log = c
         del log["Review Duration"]
-        App.default.data.delete(table="Reviews", conditions=" AND ".join(f'"{i}" = ?' if " " in i else f"{i} = ?" for i in log.keys()), conds=tuple(log.values()))
+        Reviews.delete(log)
         card.from_card(old)
         r = card.deck.get_review()
         if r: Task.invoke(r.start)
@@ -2200,9 +2219,7 @@ def finish_func(p):
                         i.media_streams[n] = p
                         if p.duration and autoplay: Task.invoke(r.autoplay)
 
-DATA_INIT = (Deck, Card, f"""
-CREATE TABLE IF NOT EXISTS Reviews (Deck TEXT NOT NULL, ID INTEGER NOT NULL, Rating TEXT NOT NULL DEFAULT 'Good', 'Review Time' INTEGER NOT NULL DEFAULT (unixepoch()), 'Review Duration' INTEGER, FOREIGN KEY (Deck, ID) REFERENCES Cards(Deck, ID) ON DELETE CASCADE ON UPDATE CASCADE);
-""")
+DATA_INIT = (Deck, Card, Reviews)
 
 INFO = {
     "ID": "io.github.kirukomaru11.Memorize",
@@ -2296,14 +2313,14 @@ def main():
             }
         },
         activate=activate,
-        data=DATA_INIT + ("CREATE TABLE IF NOT EXISTS Settings (Key TEXT PRIMARY KEY NOT NULL, Value TEXT);",),
+        data=DATA_INIT + (DataSetting,),
         window_removed=window_removed,
         actions=[
             ("new-deck", new_deck),
             ("import-data", import_data),
             ("undo", undo)
         ])
-    for i, v in {"Default Width": 360, "Default Height": 600, "Maximized": False, "Autoplay": False, "Show Hidden": False, "Regex": False, "Whole Words": False, "Case Sensitive": True, "Front": True, "Back": True}.items(): App.default.data.persist_action(App.default, i, (i, v), "Settings", "Value", "Key = ?", (i,))
+    for i, v in {"Default Width": 360, "Default Height": 600, "Maximized": False, "Autoplay": False, "Show Hidden": False, "Regex": False, "Whole Words": False, "Case Sensitive": True, "Front": True, "Back": True}.items(): DataSetting.persist_action(App.default, i, i, v)
     App.default.set_accels_for_action("app.undo", ["<primary>z"])
     App.default.lookup_action("show-hidden").connect("notify::state", Window.do_search)
     App.default.lookup_action("undo").set_enabled(False)
